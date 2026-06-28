@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trade Check">
+<meta name="theme-color" content="#0a0f1a">
+<title>Trade Checklist</title>
+<style>
+  :root {
+    --bg: #0a0f1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1f2d45;
+    --accent: #3b82f6;
+    --accent-dim: #1e3a5f;
+    --green: #10b981;
+    --green-dim: #052e1c;
+    --red: #ef4444;
+    --red-dim: #2d0a0a;
+    --amber: #f59e0b;
+    --amber-dim: #2d1a00;
+    --purple: #8b5cf6;
+    --purple-dim: #1e1040;
+    --text: #f1f5f9;
+    --text-2: #94a3b8;
+    --text-3: #475569;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,15,26,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: env(safe-area-inset-top) 16px 0;
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+  }
+  .header-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .header-sub {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .reset-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-appearance: none;
+    transition: background 0.15s;
+  }
+  .reset-btn:active { background: var(--border); }
+
+  /* PROGRESS */
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* SCROLL AREA */
+  .scroll-area {
+    padding: 12px 16px env(safe-area-inset-bottom);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
+  }
+
+  /* SECTION */
+  .section {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 14px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    gap: 10px;
+    user-select: none;
+  }
+  .section-header:active { opacity: 0.7; }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 1;
+    min-width: 0;
+  }
+  .section-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .section-count {
+    font-size: 11px;
+    color: var(--text-3);
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .chevron {
+    font-size: 11px;
+    color: var(--text-3);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .chevron.open { transform: rotate(180deg); }
+
+  .section-body {
+    padding: 0 14px 14px;
+    display: none;
+  }
+  .section-body.open { display: block; }
+
+  /* STEP TITLE */
+  .step-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin: 14px 0 6px;
+  }
+
+  /* CHECK ITEM */
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .check-item + .check-item { border-top: 1px solid var(--border); }
+  .check-item.sub { padding-left: 24px; }
+  .check-item.sub + .check-item.sub { border-top: 1px solid rgba(31,45,69,0.5); }
+
+  .checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 1.5px solid var(--text-3);
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    background: transparent;
+  }
+  .checkbox.checked {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .checkbox.checked::after {
+    content: '';
+    width: 5px;
+    height: 9px;
+    border: 2px solid #fff;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg) translateY(-1px);
+  }
+
+  .item-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    flex: 1;
+    transition: opacity 0.15s;
+  }
+  .item-text.done {
+    text-decoration: line-through;
+    opacity: 0.35;
+    color: var(--text-2);
+  }
+  .item-text .green { color: var(--green); font-weight: 500; }
+  .item-text .red { color: var(--red); font-weight: 500; }
+
+  /* PROBABILITY BARS */
+  .prob-list { margin-bottom: 6px; }
+  .prob-row { margin-bottom: 10px; }
+  .prob-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .prob-pct { color: var(--text-3); font-variant-numeric: tabular-nums; font-size: 12px; }
+  .prob-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .prob-fill { height: 100%; border-radius: 2px; }
+
+  /* AREAS */
+  .areas { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 12px 0 4px; }
+  .area-card { padding: 9px 8px; border-radius: var(--radius-sm); border: 1px solid; }
+  .area-card .area-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .area-card .area-desc { font-size: 11px; line-height: 1.4; opacity: 0.75; }
+  .area-card .area-no { font-size: 11px; font-weight: 600; margin-top: 4px; }
+
+  /* TF TABLE */
+  .tf-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  .tf-table th { font-size: 11px; color: var(--text-3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; padding: 0 0 6px; text-align: center; }
+  .tf-table td { font-size: 12px; text-align: center; padding: 5px 4px; background: var(--surface2); color: var(--text-2); }
+  .tf-table tr:first-child td { border-radius: 6px 6px 0 0; }
+  .tf-table tr:last-child td { border-radius: 0 0 6px 6px; }
+  .tf-table td + td { border-left: 1px solid var(--border); }
+  .tf-table tr + tr td { border-top: 1px solid var(--border); }
+
+  /* TARGETS */
+  .target-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .target-item:active { opacity: 0.7; }
+  .target-label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .target-desc { font-size: 12px; color: var(--text-2); line-height: 1.4; margin-top: 1px; }
+
+  /* MICRO LOOP */
+  .micro-loop { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 10px; }
+  .micro-loop-title { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .micro-step { display: flex; gap: 8px; font-size: 13px; color: var(--text-2); padding: 3px 0; }
+  .micro-num { color: var(--text-3); min-width: 16px; font-variant-numeric: tabular-nums; }
+
+  /* TIPS */
+  .tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .tip-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .tip-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .tip-text.done { text-decoration: line-through; opacity: 0.35; }
+
+  /* NOTE */
+  .note { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius-sm); padding: 9px 11px; margin-top: 10px; font-size: 12px; color: #fbbf24; line-height: 1.5; }
+
+  /* HARD RULES special styling */
+  .rule-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .rule-item + .rule-item { border-top: 1px solid var(--border); }
+
+  /* LABELS TARGETS */
+  .targets-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 12px 0 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-title">Trade Checklist</div>
+      <div class="header-sub" id="prog-label">0 / 0 complete</div>
+    </div>
+    <button class="reset-btn" onclick="resetAll()">Reset</button>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="prog-fill"></div>
+  </div>
+</div>
+
+<div class="scroll-area" id="app"></div>
+
+<script>
+const SECTIONS = [
+  {
+    id: "pm", title: "0. Pre-Market", dot: "#8b5cf6",
+    items: [
+      { id:"pm1", text:"Check high-impact news before planning." }
+    ]
+  },
+  {
+    id: "ms", title: "1. Market Structure", dot: "#8b5cf6",
+    items: [
+      { id:"ms1", text:"Look for the last break in structure.", sub:[
+        { id:"ms1a", text:"BOS has a wick → check 4H for manipulation." },
+        { id:"ms1b", text:"No 4H confirmation → hold structure until LTF confirms." }
+      ]}
+    ]
+  },
+  {
+    id: "kl", title: "2. Key Levels (KL)", dot: "#8b5cf6",
+    steps: [
+      { title:"Step 1 – Define MS", items:[
+        { id:"kl1", text:"Wait for Asia session to finish.", sub:[
+          { id:"kl1a", text:"Forward-testing? You can start earlier and adjust KL later." }
+        ]},
+        { id:"kl2", text:"Identify Daily Market Structure", sub:[
+          { id:"kl2a", text:"<span class='green'>BULLISH</span> market structure" },
+          { id:"kl2b", text:"<span class='red'>BEARISH</span> market structure" }
+        ]}
+      ]},
+      { title:"Step 2 – Yesterday's Candle", items:[
+        { id:"kl3", text:"Yesterday candle is <span class='green'>BULLISH</span>" },
+        { id:"kl4", text:"Yesterday candle is <span class='red'>BEARISH</span>" }
+      ]},
+      { title:"Step 3 – Match or Opposite?", items:[
+        { id:"kl5", text:"SAME (Match) → KL on Daily TF", sub:[] },
+        { id:"kl6", text:"OPPOSITE → KL on 4H TF", sub:[] }
+      ]},
+      { title:"Step 4 – Locate KL", items:[
+        { id:"kl7", text:"Daily KL: Nearest POIs above & below daily open.", sub:[
+          { id:"kl7a", text:"Nearest POIs mitigated → drop to 4H and repeat." }
+        ]},
+        { id:"kl8", text:"4H KL: Fresh unmitigated POIs above Asia High or below Asia Low." }
+      ]},
+      { title:"Step 5 – Classify (PKL vs OBS)", items:[
+        { id:"kl9", text:"<span class='green'>BULLISH</span> MS:", sub:[
+          { id:"kl9a", text:"KL below open = PKL (bullish POI)." },
+          { id:"kl9b", text:"KL above open = OBS (bearish POI)." }
+        ]},
+        { id:"kl10", text:"<span class='red'>BEARISH</span> MS:", sub:[
+          { id:"kl10a", text:"KL below open = OBS (bullish POI)." },
+          { id:"kl10b", text:"KL above open = PKL (bearish POI)." }
+        ]}
+      ]}
+    ]
+  },
+  {
+    id: "range", title: "3. Major Range Build", dot: "#10b981",
+    items: [
+      { id:"rb1", text:"Set directional bias from MS." },
+      { id:"rb2", text:"Find Strong Low/High matching the KL." },
+      { id:"rb3", text:"Mark Weak High/Low as QM (liquidity target)." },
+      { id:"rb4", text:"Confirm traps + orderflow + trendline." },
+      { id:"rb5", text:"Draw the Major Range (30m or chosen TF)." }
+    ],
+    note: "Define the range on the LOWEST TF where all 4 elements are clearly visible — not the highest."
+  },
+  {
+    id: "priority", title: "4. Priority Model & Areas", dot: "#10b981",
+    probs: [
+      { label:"IRL — Internal Range Liquidity", pct:80, color:"#10b981" },
+      { label:"Reaction from KL", pct:60, color:"#3b82f6" },
+      { label:"ERL — External Range Liquidity", pct:40, color:"#ef4444" }
+    ],
+    areas: [
+      { label:"Area A", desc:"Weak → IRL", tradeable:true },
+      { label:"Danger", desc:"IRL ↔ KL", tradeable:false },
+      { label:"Area B", desc:"KL → ERL", tradeable:true }
+    ]
+  },
+  {
+    id: "fractal", title: "5. Fractal Alignment", dot: "#3b82f6",
+    tfMap: [
+      { major:"4H – 1H", minor:"5m", micro:"3m – 1m" },
+      { major:"30m – 15m", minor:"3m", micro:"1m" },
+      { major:"< 15m", minor:"1m", micro:"30s–" }
+    ],
+    items: [{ id:"fr1", text:"Confirm fractal alignment before trading." }],
+    note: "Always know: am I in Major / Minor / Micro right now?"
+  },
+  {
+    id: "minor", title: "6. Minor Range & OB Setup", dot: "#3b82f6",
+    items: [
+      { id:"mr1", text:"Draw OBs on the Major TF (e.g. 30m)." },
+      { id:"mr2", text:"Drop to LTF — wait for 3CF / QM on OBS.", sub:[
+        { id:"mr2a", text:"3CF or QM = possible reaction." },
+        { id:"mr2b", text:"3CF + QM = high-probability reaction." }
+      ]},
+      { id:"mr3", text:"3CF / QM = Weak Low/High of the minor range." },
+      { id:"mr4", text:"Nearest LIQ = IRL of the minor range." },
+      { id:"mr5", text:"Strong High/Low beyond IRL = Strong Point." },
+      { id:"mr6", text:"Find the HTF POI nearest to IRL minor." }
+    ],
+    note: "Scalping liquidity MUST form before the Asia session close — not after."
+  },
+  {
+    id: "poi", title: "7. POI Refinement", dot: "#3b82f6",
+    items: [
+      { id:"poi1", text:"Start from HTF POI (e.g. 15m)." },
+      { id:"poi2", text:"Drop to 5m → nearest UNM POI inside it." },
+      { id:"poi3", text:"Drop to 3m → nearest UNM POI inside it." },
+      { id:"poi4", text:"POI below 50% of its range → refine to at or above 50%." }
+    ],
+    note: "More refine = more chance to miss. Refine for logic + RR only — not greed. Avoid hidden base wicks."
+  },
+  {
+    id: "entry", title: "8. Entry & Targets", dot: "#f59e0b",
+    items: [
+      { id:"en1", text:"Enter from the refined POI." },
+      { id:"en2", text:"SL = beyond Strong Point (add buffer near equal highs/lows)." },
+      { id:"en3", text:"Confirm Micro Range exists before entry." }
+    ],
+    targets: [
+      { id:"t1", label:"1R", desc:"Prop-firm consistency. High win rate on funded accounts." },
+      { id:"t2", label:"Nearest LIQ", desc:"High win rate + good RR. Best for scalping." },
+      { id:"t3", label:"ERL of minor range", desc:"Good win rate + high RR (~60–70%)." },
+      { id:"t4", label:"IRL major range", desc:"Super high RR — not recommended." }
+    ]
+  },
+  {
+    id: "loop", title: "9. Execution Loop", dot: "#f59e0b",
+    items: [
+      { id:"el1", text:"Scalp micro ranges until IRL minor is taken." },
+      { id:"el2", text:"IRL minor taken → stack toward ERL minor." },
+      { id:"el3", text:"ERL minor taken → minor range done." },
+      { id:"el4", text:"Major Range: keep stacking until IRL major is taken." },
+      { id:"el5", text:"Price fails OBS + taps KL → stack toward ERL." },
+      { id:"el6", text:"Price taps OBS again → repeat process." }
+    ],
+    microLoop: [
+      "Draw OBS on micro TF (3m / 1m)",
+      "Wait for 3CF/QM → IRL micro",
+      "Find strong point → HTF POI → refine",
+      "Execute, target ERL of micro range"
+    ]
+  },
+  {
+    id: "rules", title: "⚠️ Hard Rules", dot: "#ef4444",
+    rules: [
+      { id:"hr1", text:"No range formation = NO TRADE." },
+      { id:"hr2", text:"No trade in the Danger Zone (IRL ↔ KL)." },
+      { id:"hr3", text:"Stop after 6 PM UK / 10 AM LA time." },
+      { id:"hr4", text:"Major ERL taken → STOP trading for the day." },
+      { id:"hr5", text:"Accept SL as part of the system." },
+      { id:"hr6", text:"No trade in No Man's Land (no HTF key levels)." },
+      { id:"hr7", text:"QM is non-negotiable: Stop Hunt + BOS from that same high/low." },
+      { id:"hr8", text:"Liquidity must be distinct from the BOS level." },
+      { id:"hr9", text:"Never enter at key level — wait for confirmed 3m/5m trend shift after tap." },
+      { id:"hr10", text:"Body-break BMS > wick-break BMS. Require body-break for confirmation." }
+    ]
+  },
+  {
+    id: "mental", title: "🧭 Mental Check", dot: "#8b5cf6",
+    items: [
+      { id:"mc1", text:"Am I forcing a trade?" },
+      { id:"mc2", text:"Is this inside my model or outside?" },
+      { id:"mc3", text:"Is this patience or impulsiveness?" },
+      { id:"mc4", text:"What liquidity am I targeting?" },
+      { id:"mc5", text:"Is the cycle complete?" }
+    ]
+  },
+  {
+    id: "tips", title: "💡 Ebol's Key Tips", dot: "#10b981",
+    tips: [
+      { id:"tp1", icon:"🎯", text:"Daily target: 1% using 0.5% risk per trade. Stop once hit — don't chase more." },
+      { id:"tp2", icon:"🕔", text:"Prime window: 5 AM–10 AM LA. London Close (10 AM+) = avoid new entries." },
+      { id:"tp3", icon:"🔄", text:"Cycle complete = some internal liquidity swept + reversal to ERL. Not necessarily all internals." },
+      { id:"tp4", icon:"🔢", text:"Safe Internal Formula: number internals from the weak point (#1, #2…). Last connected group = safest target. After that = 50/50." },
+      { id:"tp5", icon:"🚦", text:"HTF key level failed → session likely over. LTF obstacle failed → move to the next one." },
+      { id:"tp6", icon:"🌏", text:"Asia Scenario 4 (both highs & lows taken) = focus on minor/macro ranges only." },
+      { id:"tp7", icon:"⏱", text:"Confirmation sequence: Q-in Formation → Stop Hunt → BMS. Don't shortcut it." },
+      { id:"tp8", icon:"📐", text:"Multi-TF method: use 4H/1H to find key levels, drop to 15m to confirm structural shift before entry." },
+      { id:"tp9", icon:"⚖️", text:"Nearest LIQ too close to entry = unfavorable R:R. Skip the trade." },
+      { id:"tp10", icon:"🔍", text:"Avoid refining to unmitigated wicks in a hidden base formation — these frequently fail." },
+      { id:"tp11", icon:"📊", text:"Analyze 4 pairs per session. Select only the 1–2 cleanest setups for scalping." },
+      { id:"tp12", icon:"📸", text:"Journal every trade in Notion: Emotion Case Study (before/during/after) + screenshots." },
+      { id:"tp13", icon:"🧠", text:"Blame your execution, not the system. Poor results = impatience or chasing RR." },
+      { id:"tp14", icon:"📈", text:"After hitting daily target: scalp micro internals on 1M using stop hunts + BOS only." },
+      { id:"tp15", icon:"🔎", text:"When 4H lacks a clear weak low/high, drop to 1H or 3M to define the major range." }
+    ]
+  }
+];
+
+const state = {};
+
+function allIds() {
+  const ids = [];
+  SECTIONS.forEach(s => {
+    (s.items||[]).forEach(item => { ids.push(item.id); (item.sub||[]).forEach(sub => ids.push(sub.id)); });
+    (s.steps||[]).forEach(step => step.items.forEach(item => { ids.push(item.id); (item.sub||[]).forEach(sub => ids.push(sub.id)); }));
+    (s.rules||[]).forEach(r => ids.push(r.id));
+    (s.targets||[]).forEach(t => ids.push(t.id));
+    (s.tips||[]).forEach(t => ids.push(t.id));
+  });
+  return ids;
+}
+
+function sectionIds(s) {
+  const ids = [];
+  (s.items||[]).forEach(item => { ids.push(item.id); (item.sub||[]).forEach(sub => ids.push(sub.id)); });
+  (s.steps||[]).forEach(step => step.items.forEach(item => { ids.push(item.id); (item.sub||[]).forEach(sub => ids.push(sub.id)); }));
+  (s.rules||[]).forEach(r => ids.push(r.id));
+  (s.targets||[]).forEach(t => ids.push(t.id));
+  (s.tips||[]).forEach(t => ids.push(t.id));
+  return ids;
+}
+
+function updateProgress() {
+  const ids = allIds();
+  const done = ids.filter(id => state[id]).length;
+  const total = ids.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('prog-label').textContent = `${done} / ${total} complete`;
+  document.getElementById('prog-fill').style.width = `${pct}%`;
+}
+
+function toggle(id) {
+  state[id] = !state[id];
+  const cb = document.getElementById('cb-'+id);
+  const txt = document.getElementById('txt-'+id);
+  if (cb) { if(state[id]) cb.classList.add('checked'); else cb.classList.remove('checked'); }
+  if (txt) { if(state[id]) txt.classList.add('done'); else txt.classList.remove('done'); }
+
+  // update section count
+  SECTIONS.forEach(s => {
+    const sIds = sectionIds(s);
+    if (sIds.includes(id)) {
+      const done = sIds.filter(i => state[i]).length;
+      const el = document.getElementById('cnt-'+s.id);
+      if (el) el.textContent = done > 0 ? `${done}/${sIds.length}` : '';
+    }
+  });
+
+  updateProgress();
+}
+
+function toggleSection(id) {
+  const body = document.getElementById('body-'+id);
+  const chev = document.getElementById('chev-'+id);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chev.classList.toggle('open', !isOpen);
+}
+
+function resetAll() {
+  if (!confirm('Reset all checkboxes?')) return;
+  allIds().forEach(id => {
+    state[id] = false;
+    const cb = document.getElementById('cb-'+id);
+    const txt = document.getElementById('txt-'+id);
+    if (cb) cb.classList.remove('checked');
+    if (txt) txt.classList.remove('done');
+  });
+  SECTIONS.forEach(s => {
+    const el = document.getElementById('cnt-'+s.id);
+    if (el) el.textContent = '';
+  });
+  updateProgress();
+}
+
+function renderItem(item, isSub=false) {
+  return `
+    <div class="check-item${isSub?' sub':''}" onclick="toggle('${item.id}')">
+      <div class="checkbox${state[item.id]?' checked':''}" id="cb-${item.id}"></div>
+      <div class="item-text${state[item.id]?' done':''}" id="txt-${item.id}">${item.text}</div>
+    </div>
+    ${(item.sub||[]).map(s => renderItem(s, true)).join('')}
+  `;
+}
+
+function render() {
+  document.getElementById('app').innerHTML = SECTIONS.map(s => {
+    const sIds = sectionIds(s);
+    const done = sIds.filter(i => state[i]).length;
+    const countStr = done > 0 ? `${done}/${sIds.length}` : '';
+
+    let body = '';
+
+    if (s.items) body += s.items.map(item => renderItem(item)).join('');
+
+    if (s.steps) s.steps.forEach(step => {
+      body += `<div class="step-title">${step.title}</div>`;
+      body += step.items.map(item => renderItem(item)).join('');
+    });
+
+    if (s.tfMap) {
+      body += `<table class="tf-table">
+        <tr><th>Major</th><th>Minor</th><th>Micro</th></tr>
+        ${s.tfMap.map(r => `<tr><td>${r.major}</td><td>${r.minor}</td><td>${r.micro}</td></tr>`).join('')}
+      </table>`;
+    }
+
+    if (s.probs) {
+      body += `<div class="prob-list">`;
+      s.probs.forEach(p => {
+        body += `<div class="prob-row">
+          <div class="prob-header"><span>${p.label}</span><span class="prob-pct">${p.pct}%</span></div>
+          <div class="prob-track"><div class="prob-fill" style="width:${p.pct}%;background:${p.color}"></div></div>
+        </div>`;
+      });
+      body += `</div>`;
+      body += `<div class="areas">`;
+      s.areas.forEach(a => {
+        const bg = a.tradeable ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
+        const br = a.tradeable ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)';
+        const tc = a.tradeable ? '#10b981' : '#ef4444';
+        body += `<div class="area-card" style="background:${bg};border-color:${br}">
+          <div class="area-name" style="color:${tc}">${a.label}</div>
+          <div class="area-desc" style="color:${tc}">${a.desc}</div>
+          ${!a.tradeable ? `<div class="area-no" style="color:#ef4444">NO TRADE</div>` : ''}
+        </div>`;
+      });
+      body += `</div>`;
+    }
+
+    if (s.rules) {
+      body += s.rules.map(r => `
+        <div class="rule-item" onclick="toggle('${r.id}')">
+          <div class="checkbox${state[r.id]?' checked':''}" id="cb-${r.id}"></div>
+          <div class="item-text${state[r.id]?' done':''}" id="txt-${r.id}">${r.text}</div>
+        </div>
+      `).join('');
+    }
+
+    if (s.targets) {
+      body += `<div class="targets-label">Targets — pick per style</div>`;
+      body += s.targets.map(t => `
+        <div class="target-item" onclick="toggle('${t.id}')">
+          <div class="checkbox${state[t.id]?' checked':''}" id="cb-${t.id}" style="margin-top:3px"></div>
+          <div>
+            <div class="target-label${state[t.id]?' done':''}" id="txt-${t.id}">${t.label}</div>
+            <div class="target-desc">${t.desc}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    if (s.microLoop) {
+      body += `<div class="micro-loop">
+        <div class="micro-loop-title">Micro range loop</div>
+        ${s.microLoop.map((step,i) => `
+          <div class="micro-step">
+            <span class="micro-num">${i+1}.</span>
+            <span>${step}</span>
+          </div>
+        `).join('')}
+      </div>`;
+    }
+
+    if (s.tips) {
+      body += s.tips.map(t => `
+        <div class="tip-item" onclick="toggle('${t.id}')">
+          <div class="checkbox${state[t.id]?' checked':''}" id="cb-${t.id}" style="flex-shrink:0;margin-top:1px"></div>
+          <div class="tip-icon">${t.icon}</div>
+          <div class="tip-text${state[t.id]?' done':''}" id="txt-${t.id}">${t.text}</div>
+        </div>
+      `).join('');
+    }
+
+    if (s.note) body += `<div class="note">ⓘ ${s.note}</div>`;
+
+    return `
+      <div class="section">
+        <button class="section-header" onclick="toggleSection('${s.id}')">
+          <div class="section-label">
+            <div class="section-dot" style="background:${s.dot}"></div>
+            <div class="section-title">${s.title}</div>
+          </div>
+          <span class="section-count" id="cnt-${s.id}">${countStr}</span>
+          <span class="chevron" id="chev-${s.id}">▾</span>
+        </button>
+        <div class="section-body" id="body-${s.id}">${body}</div>
+      </div>
+    `;
+  }).join('');
+
+  updateProgress();
+}
+
+render();
+</script>
+</body>
+</html>
